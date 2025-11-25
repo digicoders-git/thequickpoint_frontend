@@ -19,7 +19,7 @@ export default function Login() {
 
     try {
       // console.log('Attempting login with:', { email: form.email });
-      const res = await API.post("http://localhost:5000/api/admin/login", form);
+      const res = await API.post("/admin/login", form);
       // console.log('Login response:', res.data);
       login(res.data);
       navigate("/dashboard");
