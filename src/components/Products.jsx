@@ -287,6 +287,7 @@ export default function Products() {
                     <option value="kg">Kilogram</option>
                     <option value="gram">Gram</option>
                     <option value="ml">Milliliter</option>
+                    <option value="box">Boxes</option>
                   </select>
                 </div>
                 <div className="input-group">

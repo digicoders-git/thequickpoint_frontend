@@ -18,14 +18,10 @@ export default function Login() {
     setError("");
 
     try {
-      // console.log('Attempting login with:', { email: form.email });
       const res = await API.post("/admin/login", form);
-      // console.log('Login response:', res.data);
       login(res.data);
       navigate("/dashboard");
     } catch (err) {
-      // console.error('Login error:', err.message);
-      // console.error('Error response:', err.response);
       setError(err.response?.data?.message || err.message || "Login failed");
     } finally {
       setLoading(false);
@@ -39,9 +35,8 @@ export default function Login() {
           <div className="login-header">
             <img src={logo} alt="Logo" className="login-logo" />
             <h1 className="login-title">The Quick Point</h1>
-           
           </div>
-          
+
           <h2>Admin Login</h2>
           {error && <div className="error">{error}</div>}
           <form onSubmit={submit}>

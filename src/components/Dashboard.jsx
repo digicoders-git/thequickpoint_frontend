@@ -45,7 +45,7 @@ import {
     MdAttachMoney
 } from "react-icons/md";
 
-import { Line } from 'react-chartjs-2';
+// import { Line } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -84,6 +84,7 @@ const Dashboard = () => {
     const [allActivities, setAllActivities] = useState([]);
     const [showAllActivities, setShowAllActivities] = useState(false);
     const [chartData, setChartData] = useState([]);
+    const [stores, setStores] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -96,6 +97,36 @@ const Dashboard = () => {
         fetchChartData();
     }, [token, navigate]);
 
+    useEffect(() => {
+        // Listen for store updates
+        const handleStorageChange = () => {
+            fetchDashboardStats();
+        };
+        
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
+    const fetchStores = () => {
+        // Get stores from localStorage or use default data
+        const storedStores = JSON.parse(localStorage.getItem('stores') || '[]');
+        const defaultStores = [
+            { id: 1, name: "Main Store", location: "Downtown", manager: "John Smith", phone: "9876543210", status: "active", revenue: 15000, orders: 45 },
+            { id: 2, name: "Branch Store", location: "Mall Road", manager: "Jane Doe", phone: "9876543211", status: "active", revenue: 12500, orders: 38 },
+            { id: 3, name: "Express Store", location: "Airport", manager: "Bob Wilson", phone: "9876543212", status: "inactive", revenue: 8200, orders: 22 }
+        ];
+        
+        const storesData = storedStores.length > 0 ? storedStores : defaultStores;
+        setStores(storesData);
+        
+        // Save to localStorage if using default data
+        if (storedStores.length === 0) {
+            localStorage.setItem('stores', JSON.stringify(defaultStores));
+        }
+        
+        return storesData;
+    };
+
     const fetchDashboardStats = async () => {
         try {
             const res = await API.get("/admin/dashboard/stats");
@@ -104,18 +135,43 @@ const Dashboard = () => {
             const payments = JSON.parse(localStorage.getItem('payments') || '[]');
             const totalPayments = payments.reduce((sum, payment) => sum + payment.total, 0);
             
+            // Get stores data
+            const storesData = fetchStores();
+            const totalStorePayments = storesData.reduce((sum, store) => sum + (store.revenue || 0), 0);
+            
+            // Calculate user stats from dummy data
+            const dummyUsers = [
+                { _id: '1', name: 'John Doe', email: 'john.doe@example.com', role: 'user', status: 'active', createdAt: '2024-01-15T10:30:00Z' },
+                { _id: '2', name: 'Jane Smith', email: 'jane.smith@example.com', role: 'admin', status: 'active', createdAt: '2024-01-10T14:20:00Z' },
+                { _id: '3', name: 'Mike Johnson', email: 'mike.johnson@example.com', role: 'user', status: 'inactive', createdAt: '2024-01-08T09:15:00Z' },
+                { _id: '4', name: 'Sarah Wilson', email: 'sarah.wilson@example.com', role: 'user', status: 'active', createdAt: '2024-01-05T16:45:00Z' },
+                { _id: '5', name: 'David Brown', email: 'david.brown@example.com', role: 'moderator', status: 'active', createdAt: '2024-01-03T11:30:00Z' },
+                { _id: '6', name: 'Lisa Davis', email: 'lisa.davis@example.com', role: 'user', status: 'inactive', createdAt: '2023-12-28T13:20:00Z' },
+                { _id: '7', name: 'Robert Miller', email: 'robert.miller@example.com', role: 'user', status: 'active', createdAt: '2023-12-25T08:10:00Z' },
+                { _id: '8', name: 'Emily Garcia', email: 'emily.garcia@example.com', role: 'admin', status: 'active', createdAt: '2023-12-20T15:35:00Z' }
+            ];
+            
+            const totalUsers = dummyUsers.length;
+            const activeUsers = dummyUsers.filter(user => user.status === 'active').length;
+            const inactiveUsers = dummyUsers.filter(user => user.status === 'inactive').length;
+            
             // Calculate other stats
             const categories = ['milk', 'dahi', 'ghee', 'buttermilk', 'cheese', 'cream'];
             const totalCategories = categories.length;
             
             setStats({
                 ...res.data, 
+                totalUsers,
+                activeUsers,
+                inactiveUsers,
                 totalPayments,
                 totalCategories,
                 totalProducts: 15,
                 totalOrders: 25,
                 totalDeliveryBoys: 8,
-                totalStoreItems: 12
+                totalStoreItems: 12,
+                totalStores: storesData.length,
+                totalStorePayments
             });
         } catch (error) {
             // console.error("Failed to fetch stats:", error);
@@ -123,17 +179,39 @@ const Dashboard = () => {
             const payments = JSON.parse(localStorage.getItem('payments') || '[]');
             const totalPayments = payments.reduce((sum, payment) => sum + payment.total, 0);
             
+            // Get stores data for fallback
+            const storesData = fetchStores();
+            const totalStorePayments = storesData.reduce((sum, store) => sum + (store.revenue || 0), 0);
+            
+            // Calculate user stats from dummy data for fallback
+            const dummyUsers = [
+                { _id: '1', name: 'John Doe', email: 'john.doe@example.com', role: 'user', status: 'active', createdAt: '2024-01-15T10:30:00Z' },
+                { _id: '2', name: 'Jane Smith', email: 'jane.smith@example.com', role: 'admin', status: 'active', createdAt: '2024-01-10T14:20:00Z' },
+                { _id: '3', name: 'Mike Johnson', email: 'mike.johnson@example.com', role: 'user', status: 'inactive', createdAt: '2024-01-08T09:15:00Z' },
+                { _id: '4', name: 'Sarah Wilson', email: 'sarah.wilson@example.com', role: 'user', status: 'active', createdAt: '2024-01-05T16:45:00Z' },
+                { _id: '5', name: 'David Brown', email: 'david.brown@example.com', role: 'moderator', status: 'active', createdAt: '2024-01-03T11:30:00Z' },
+                { _id: '6', name: 'Lisa Davis', email: 'lisa.davis@example.com', role: 'user', status: 'inactive', createdAt: '2023-12-28T13:20:00Z' },
+                { _id: '7', name: 'Robert Miller', email: 'robert.miller@example.com', role: 'user', status: 'active', createdAt: '2023-12-25T08:10:00Z' },
+                { _id: '8', name: 'Emily Garcia', email: 'emily.garcia@example.com', role: 'admin', status: 'active', createdAt: '2023-12-20T15:35:00Z' }
+            ];
+            
+            const totalUsers = dummyUsers.length;
+            const activeUsers = dummyUsers.filter(user => user.status === 'active').length;
+            const inactiveUsers = dummyUsers.filter(user => user.status === 'inactive').length;
+            
             setStats({
-                totalUsers: 0,
-                activeUsers: 0,
-                inactiveUsers: 0,
+                totalUsers,
+                activeUsers,
+                inactiveUsers,
                 totalAdmins: 0,
                 totalPayments,
                 totalCategories: 6,
                 totalProducts: 15,
                 totalOrders: 25,
                 totalDeliveryBoys: 8,
-                totalStoreItems: 12
+                totalStoreItems: 12,
+                totalStores: storesData.length,
+                totalStorePayments
             });
         }
     };
@@ -241,7 +319,7 @@ const Dashboard = () => {
                                 </div>
                                 <div className="stat-info">
                                     <h3>{stats.totalUsers || 0}</h3>
-                                    <p>Total Users</p>
+                                    <p>Total Customers</p>
                                 </div>
                             </div>
                             <div className="stat-card">
@@ -250,11 +328,11 @@ const Dashboard = () => {
                                 </div>
                                 <div className="stat-info">
                                     <h3>{stats.activeUsers || 0}</h3>
-                                    <p>Active Users</p>
+                                    <p>Active Customers</p>
                                 </div>
                             </div>
 
-                            <div className="stat-card">
+                            {/* <div className="stat-card">
                                 <div className="stat-icon admin">
                                     <MdSupervisorAccount />
                                 </div>
@@ -262,7 +340,7 @@ const Dashboard = () => {
                                     <h3>{stats.totalAdmins || 0}</h3>
                                     <p>Total Admins</p>
                                 </div>
-                            </div>
+                            </div> */}
                             <div className="stat-card">
                                 <div className="stat-icon payment">
                                     <MdAttachMoney />
@@ -273,25 +351,7 @@ const Dashboard = () => {
                                 </div>
                             </div>
                             <div className="stat-card">
-                                <div className="stat-icon category">
-                                    <MdCategory />
-                                </div>
-                                <div className="stat-info">
-                                    <h3>{stats.totalCategories || 0}</h3>
-                                    <p>Total Categories</p>
-                                </div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-icon product">
-                                    <MdInventory />
-                                </div>
-                                <div className="stat-info">
-                                    <h3>{stats.totalProducts || 0}</h3>
-                                    <p>Total Products</p>
-                                </div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-icon order">
+                                <div className="stat-icon orders">
                                     <MdShoppingCart />
                                 </div>
                                 <div className="stat-info">
@@ -300,12 +360,12 @@ const Dashboard = () => {
                                 </div>
                             </div>
                             <div className="stat-card">
-                                <div className="stat-icon delivery">
-                                    <MdDeliveryDining />
+                                <div className="stat-icon products">
+                                    <MdInventory />
                                 </div>
                                 <div className="stat-info">
-                                    <h3>{stats.totalDeliveryBoys || 0}</h3>
-                                    <p>Delivery Boys</p>
+                                    <h3>{stats.totalProducts || 0}</h3>
+                                    <p>Total Products</p>
                                 </div>
                             </div>
                             <div className="stat-card">
@@ -313,9 +373,65 @@ const Dashboard = () => {
                                     <MdStore />
                                 </div>
                                 <div className="stat-info">
-                                    <h3>{stats.totalStoreItems || 0}</h3>
-                                    <p>Store Items</p>
+                                    <h3>{stats.totalStores || 5}</h3>
+                                    <p>Total Stores</p>
                                 </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-icon store-payment">
+                                    <MdPayment />
+                                </div>
+                                <div className="stat-info">
+                                    <h3>₹{stats.totalStorePayments || 45000}</h3>
+                                    <p>Store Payments</p>
+                                </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-icon delivery">
+                                    <MdDeliveryDining />
+                                </div>
+                                <div className="stat-info">
+                                    <h3>{stats.totalDeliveryBoys || 8}</h3>
+                                    <p>Delivery Boys</p>
+                                </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-icon categories">
+                                    <MdCategory />
+                                </div>
+                                <div className="stat-info">
+                                    <h3>{stats.totalCategories || 6}</h3>
+                                    <p>Categories</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Store Details Section */}
+                        <div className="store-details-section">
+                            <h3>Store Overview</h3>
+                            <div className="store-cards-grid">
+                                {stores.map((store) => (
+                                    <div key={store.id} className="store-detail-card">
+                                        <div className="store-card-header">
+                                            <MdStore className="store-icon" />
+                                            <h4>{store.name} - {store.location}</h4>
+                                        </div>
+                                        <div className="store-stats">
+                                            <div className="store-stat">
+                                                <span className="label">Revenue:</span>
+                                                <span className="value">₹{store.revenue?.toLocaleString() || '0'}</span>
+                                            </div>
+                                            <div className="store-stat">
+                                                <span className="label">Orders:</span>
+                                                <span className="value">{store.orders || 0}</span>
+                                            </div>
+                                            <div className="store-stat">
+                                                <span className="label">Status:</span>
+                                                <span className={`status ${store.status}`}>{store.status}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
@@ -442,7 +558,7 @@ const Dashboard = () => {
             case "profile":
                 return <Profile />
             case "store":
-                return <Store />
+                return <Store onStoreUpdate={refreshDashboard} />
             case "payment":
                 return <Payment onPaymentUpdate={refreshDashboard} />
             case "deliveryboy":
@@ -490,7 +606,7 @@ const Dashboard = () => {
                         <li className={activepage === "users" ? "active" : ""}>
                             <a href="#users" onClick={() => setActivePage("users")}>
                                 <MdPeople />
-                                {sidebarOpen && <span>Users</span>}
+                                {sidebarOpen && <span>Customers</span>}
                             </a>
                         </li>
                          <li className={activepage === "products" ? "active" : ""}>

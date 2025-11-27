@@ -3,7 +3,7 @@ import { MdStore, MdCardGiftcard, MdLocalOffer, MdEdit, MdDelete, MdAdd, MdVisib
 import Swal from "sweetalert2";
 import "./Store.css";
 
-export default function Store() {
+export default function Store({ onStoreUpdate }) {
   const [activeTab, setActiveTab] = useState('stores');
   
   const [giftCards, setGiftCards] = useState([
@@ -18,11 +18,14 @@ export default function Store() {
     { id: 3, code: "DAIRY10", discount: 10, type: "percentage", minAmount: 50, status: "expired", expiryDate: "2024-01-15", storeId: 1 }
   ]);
 
-  const [stores, setStores] = useState([
-    { id: 1, name: "Main Store", location: "Downtown", manager: "John Smith", phone: "9876543210", status: "active" },
-    { id: 2, name: "Branch Store", location: "Mall Road", manager: "Jane Doe", phone: "9876543211", status: "active" },
-    { id: 3, name: "Outlet Store", location: "City Center", manager: "Bob Wilson", phone: "9876543212", status: "inactive" }
-  ]);
+  const [stores, setStores] = useState(() => {
+    const saved = localStorage.getItem('stores');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, name: "Main Store", location: "Downtown", manager: "John Smith", phone: "9876543210", status: "active", revenue: 15000, orders: 45 },
+      { id: 2, name: "Branch Store", location: "Mall Road", manager: "Jane Doe", phone: "9876543211", status: "active", revenue: 12500, orders: 38 },
+      { id: 3, name: "Outlet Store", location: "City Center", manager: "Bob Wilson", phone: "9876543212", status: "inactive", revenue: 8200, orders: 22 }
+    ];
+  });
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -79,18 +82,33 @@ export default function Store() {
         }
       } else {
         if (editingItem) {
-          setStores(stores.map(item => 
+          const updatedStores = stores.map(item => 
             item.id === editingItem.id 
-              ? { ...formData, id: editingItem.id }
+              ? { ...formData, id: editingItem.id, revenue: item.revenue, orders: item.orders }
               : item
-          ));
+          );
+          setStores(updatedStores);
+          localStorage.setItem('stores', JSON.stringify(updatedStores));
         } else {
-          const newItem = { ...formData, id: Date.now() };
-          setStores([...stores, newItem]);
+          const newItem = { 
+            ...formData, 
+            id: Date.now(),
+            revenue: Math.floor(Math.random() * 20000) + 5000,
+            orders: Math.floor(Math.random() * 50) + 10
+          };
+          const updatedStores = [...stores, newItem];
+          setStores(updatedStores);
+          localStorage.setItem('stores', JSON.stringify(updatedStores));
         }
       }
       const itemType = activeTab === 'giftcards' ? 'Gift Card' : activeTab === 'coupons' ? 'Coupon' : 'Store';
       Swal.fire('Success!', `${itemType} ${editingItem ? 'updated' : 'created'} successfully.`, 'success');
+      
+      // Notify dashboard of store changes
+      if (activeTab === 'stores' && onStoreUpdate) {
+        onStoreUpdate();
+      }
+      
       resetForm();
     }
   };
@@ -143,7 +161,9 @@ export default function Store() {
       } else if (activeTab === 'coupons') {
         setCoupons(coupons.filter(item => item.id !== itemId));
       } else {
-        setStores(stores.filter(item => item.id !== itemId));
+        const updatedStores = stores.filter(item => item.id !== itemId);
+        setStores(updatedStores);
+        localStorage.setItem('stores', JSON.stringify(updatedStores));
       }
       const itemType = activeTab === 'giftcards' ? 'Gift Card' : activeTab === 'coupons' ? 'Coupon' : 'Store';
       Swal.fire('Deleted!', `${itemType} deleted successfully.`, 'success');
